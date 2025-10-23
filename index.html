@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Caption Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      color: #222;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #0066ff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: #0044cc;
+    }
+    #output {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Caption Generator</h1>
+
+  <p>Generate viral captions for your business instantly using AI.</p>
+
+  <label>Niche</label>
+  <select id="niche">
+    <option>Fashion</option>
+    <option>Food / Restaurant</option>
+    <option>Fitness</option>
+    <option>Real Estate</option>
+    <option>Crypto / Forex</option>
+    <option>Tech</option>
+    <option>Other</option>
+  </select>
+
+  <label>Business Description</label>
+  <textarea id="business" placeholder="Describe what you sell..."></textarea>
+
+  <label>Tone of Voice</label>
+  <select id="tone">
+    <option>Professional</option>
+    <option>Funny</option>
+    <option>Luxury / Classy</option>
+    <option>Friendly</option>
+    <option>Bold / Confident</option>
+  </select>
+
+  <label>Number of Captions</label>
+  <input type="number" id="count" placeholder="e.g. 10" />
+
+  <button onclick="generateCaptions()">Generate Captions</button>
+
+  <div id="output"></div>
+
+  <script>
+    async function generateCaptions() {
+      const niche = document.getElementById("niche").value;
+      const business = document.getElementById("business").value;
+      const tone = document.getElementById("tone").value;
+      const count = document.getElementById("count").value;
+      const output = document.getElementById("output");
+
+      output.innerHTML = "Generating captions... ⏳";
+
+      const prompt = `Act as a professional social media manager. Generate ${count} engaging Instagram captions for a ${niche} business that ${business}. The tone should be ${tone}. Each caption should include emojis and relevant hashtags.`;
+
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer YOUR_OPENAI_API_KEY"
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const captions = data.choices[0].message.content;
+
+      output.innerHTML = `<h3>Your Captions:</h3><pre>${captions}</pre>`;
+    }
+  </script>
+</body>
+</html>
