@@ -3,61 +3,108 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI Captions Generator</title>
+  <title>Pro Social Write-ups — AI Generator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="container">
     <header class="header">
-      <h1 class="logo">AI Captions</h1>
-      <p class="tagline">Generate scroll-stopping captions — fast.</p>
+      <div>
+        <h1 class="logo">ProWriteAI</h1>
+        <p class="tagline">AI-powered social media write-ups — professional, local-ready, and copy-ready.</p>
+      </div>
+      <div class="header-actions">
+        <label class="small-muted">Examples</label>
+        <select id="examplePicker" aria-label="Pick example">
+          <option value="">— choose an example —</option>
+          <option value="new-product">New product launch (Fashion)</option>
+          <option value="blog-post">Blog post summary (Tech)</option>
+          <option value="event">Event promo (Music)</option>
+          <option value="testimonial">Customer testimonial (Food)</option>
+        </select>
+      </div>
     </header>
 
     <section class="card input-card">
       <div class="field">
-        <label for="niche">Choose niche</label>
+        <label for="niche">Niche</label>
         <select id="niche">
           <option value="general">General</option>
-          <option value="space">Space Facts</option>
-          <option value="marketing">Marketing</option>
-          <option value="fitness">Fitness</option>
-          <option value="food">Food</option>
           <option value="fashion">Fashion</option>
-          <option value="funny">Funny / Meme</option>
-          <option value="motivation">Motivation</option>
+          <option value="food">Food</option>
+          <option value="tech">Tech</option>
+          <option value="music">Music</option>
+          <option value="education">Education</option>
+          <option value="marketing">Marketing</option>
+          <option value="space">Space Facts</option>
         </select>
       </div>
 
       <div class="field">
-        <label for="topic">Topic / keywords</label>
-        <input id="topic" placeholder="e.g. lunar eclipse, keto recipes, gym tips" />
+        <label for="topic">Topic / Short Brief</label>
+        <input id="topic" placeholder="e.g. 'New summer jacket launch, premium cotton, Lagos collection'"/>
+      </div>
+
+      <div class="row small-gaps">
+        <div class="field small">
+          <label for="tone">Tone</label>
+          <select id="tone">
+            <option value="professional">Professional</option>
+            <option value="casual">Casual</option>
+            <option value="funny">Funny</option>
+            <option value="inspirational">Inspirational</option>
+            <option value="sales">Sales / Persuasive</option>
+          </select>
+        </div>
+
+        <div class="field small">
+          <label for="length">Approx length (chars)</label>
+          <input id="length" type="number" min="40" max="400" value="140" />
+        </div>
+
+        <div class="field small">
+          <label for="count">Variants</label>
+          <input id="count" type="number" min="1" max="6" value="3" />
+        </div>
       </div>
 
       <div class="row">
-        <button id="generate" class="btn primary">Generate Captions</button>
+        <button id="generate" class="btn primary">Generate Posts</button>
         <button id="clear" class="btn">Clear</button>
+        <button id="copyAll" class="btn">Copy All</button>
       </div>
 
-      <p id="help" class="help">Tip: Add a short keyword + choose niche for best results.</p>
+      <p id="help" class="help">Tip: add specifics (location, product features, CTA) for better results.</p>
     </section>
 
     <section class="card results-card" aria-live="polite">
       <div class="results-header">
-        <h2>Generated Captions</h2>
-        <button id="copyAll" class="btn small">Copy All</button>
+        <h2>Generated Write-ups</h2>
+        <div class="results-actions-right">
+          <button id="exportJson" class="btn small">Export JSON</button>
+          <button id="exportCsv" class="btn small">Export CSV</button>
+        </div>
       </div>
 
       <div id="loading" class="loading hidden">
         <div class="spinner"></div>
-        <span>Generating captions…</span>
+        <span>Generating professional posts …</span>
       </div>
 
       <div id="results" class="results"></div>
-      <p class="muted">This version is frontend-only (mock AI). You can later replace it with a real API call.</p>
+
+      <div class="examples">
+        <h3>Dashboard Examples</h3>
+        <div class="example-grid">
+          <div><strong>Product launch (Fashion)</strong><p>Fresh Lagos drop: premium cotton jacket, limited stock, pre-order now.</p></div>
+          <div><strong>Event promo (Music)</strong><p>Live at The Beat — free entry before 9pm, RSVP.</p></div>
+          <div><strong>Tech Post</strong><p>How this tool saves you 3 hours a week. Link to blog.</p></div>
+        </div>
+      </div>
     </section>
 
     <footer class="footer">
-      <small>Built with Replit • Frontend-only</small>
+      <small>Built with OpenAI + Replit • ProWriteAI</small>
     </footer>
   </main>
 
