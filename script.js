@@ -1,34 +1,84 @@
-/* Frontend-only "mock AI" captions generator.
-   - Generates variations based on niche + topic
-   - Ready to replace `mockGenerate()` with an API call when you add a backend or client API.
-*/
+// Set your Replit backend URL here (no trailing slash)
+const BACKEND_URL = "REPLIT_BACKEND_URL";
 
 const nicheEl = document.getElementById('niche');
 const topicEl = document.getElementById('topic');
+const toneEl = document.getElementById('tone');
+const lengthEl = document.getElementById('length');
+const countEl = document.getElementById('count');
 const generateBtn = document.getElementById('generate');
 const clearBtn = document.getElementById('clear');
 const resultsEl = document.getElementById('results');
 const loadingEl = document.getElementById('loading');
 const copyAllBtn = document.getElementById('copyAll');
+const examplePicker = document.getElementById('examplePicker');
+const exportJsonBtn = document.getElementById('exportJson');
+const exportCsvBtn = document.getElementById('exportCsv');
+const helpEl = document.getElementById('help');
+
+examplePicker.addEventListener('change', () => {
+  const val = examplePicker.value;
+  if (val === 'new-product') {
+    nicheEl.value = 'fashion';
+    topicEl.value = 'New summer jacket launch, premium cotton, Lagos collection, limited run';
+    toneEl.value = 'sales';
+    lengthEl.value = 160;
+    countEl.value = 3;
+  } else if (val === 'blog-post') {
+    nicheEl.value = 'tech';
+    topicEl.value = 'Explainer: how the new X app saves developers time';
+    toneEl.value = 'professional';
+    lengthEl.value = 200;
+    countEl.value = 2;
+  } else if (val === 'event') {
+    nicheEl.value = 'music';
+    topicEl.value = 'Live DJ night at The Dome, Friday, 9pm — RSVP';
+    toneEl.value = 'casual';
+    lengthEl.value = 120;
+    countEl.value = 3;
+  } else if (val === 'testimonial') {
+    nicheEl.value = 'food';
+    topicEl.value = 'Customer review: best jollof in town, friendly staff';
+    toneEl.value = 'casual';
+    lengthEl.value = 120;
+    countEl.value = 3;
+  }
+});
+
+// UI helpers
+function startLoading(){ loadingEl.classList.remove('hidden'); generateBtn.disabled = true; clearBtn.disabled = true; }
+function stopLoading(){ loadingEl.classList.add('hidden'); generateBtn.disabled = false; clearBtn.disabled = false; }
+function toast(msg){ const old = helpEl.innerText; helpEl.innerText = msg; setTimeout(()=> helpEl.innerText = old, 3000); }
 
 generateBtn.addEventListener('click', async () => {
   const niche = nicheEl.value.trim();
   const topic = topicEl.value.trim();
+  const tone = toneEl.value.trim();
+  const length = parseInt(lengthEl.value) || 140;
+  const count = parseInt(countEl.value) || 3;
 
-  if (!topic) {
-    topicEl.focus();
-    return toast('Please enter a topic or keyword.');
-  }
+  if (!topic) { topicEl.focus(); return toast('Please enter a topic or brief.'); }
 
   startLoading();
-  // Simulate latency like an AI (improves UX)
-  await delay(700);
-
-  // Generate 5 caption variants
-  const captions = mockGenerate(niche, topic, 5);
-  showResults(captions);
-
-  stopLoading();
+  try {
+    const resp = await fetch(BACKEND_URL + '/generate', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ niche, topic, tone, length, count })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({error:'server error'}));
+      throw new Error(err.error || err.details || 'Server error');
+    }
+    const data = await resp.json();
+    const posts = data.posts || [];
+    showResults(posts);
+  } catch (e) {
+    console.error(e);
+    toast(String(e.message || e));
+  } finally {
+    stopLoading();
+  }
 });
 
 clearBtn.addEventListener('click', () => {
@@ -41,32 +91,69 @@ copyAllBtn.addEventListener('click', async () => {
   if (!texts.length) return;
   const all = texts.join('\n\n');
   await copyToClipboard(all);
-  toast('All captions copied to clipboard');
+  toast('All posts copied to clipboard');
 });
 
-/* helper functions */
+exportJsonBtn.addEventListener('click', () => {
+  const posts = collectPosts();
+  if (!posts.length) return toast('No posts to export');
+  const blob = new Blob([JSON.stringify(posts, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'posts.json'; a.click(); URL.revokeObjectURL(url);
+});
 
-function startLoading(){
-  loadingEl.classList.remove('hidden');
-  generateBtn.disabled = true;
-  clearBtn.disabled = true;
+exportCsvBtn.addEventListener('click', () => {
+  const posts = collectPosts();
+  if (!posts.length) return toast('No posts to export');
+  let csv = 'text,notes,hashtags\n';
+  posts.forEach(p => {
+    const h = (p.hashtags || []).join(' ');
+    csv += `"${(p.text||'').replace(/"/g,'""')}","${(p.notes||'').replace(/"/g,'""')}","${h.replace(/"/g,'""')}"\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'posts.csv'; a.click(); URL.revokeObjectURL(url);
+});
+
+function collectPosts(){
+  return Array.from(resultsEl.querySelectorAll('.result-item')).map(node => {
+    return {
+      text: node.querySelector('.result-text').innerText,
+      notes: node.querySelector('.result-notes') ? node.querySelector('.result-notes').innerText : '',
+      hashtags: node.dataset.hashtags ? node.dataset.hashtags.split(',').filter(Boolean) : []
+    };
+  });
 }
-function stopLoading(){
-  loadingEl.classList.add('hidden');
-  generateBtn.disabled = false;
-  clearBtn.disabled = false;
-}
-function delay(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
 function showResults(list){
   resultsEl.innerHTML = '';
-  list.forEach((txt, idx) => {
-    const item = document.createElement('div');
-    item.className = 'result-item';
+  if (!list || !list.length) {
+    resultsEl.innerHTML = '<div class="result-item"><div class="result-text">No posts returned.</div></div>';
+    return;
+  }
 
-    const text = document.createElement('div');
-    text.className = 'result-text';
-    text.innerText = txt;
+  list.forEach(item => {
+    const text = item.text || item;
+    const notes = item.notes || '';
+    const hashtags = item.hashtags || [];
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'result-item';
+    if (hashtags.length) wrapper.dataset.hashtags = hashtags.join(',');
+
+    const content = document.createElement('div');
+    content.style.flex = '1';
+
+    const tdiv = document.createElement('div');
+    tdiv.className = 'result-text';
+    tdiv.innerText = text;
+
+    const meta = document.createElement('div');
+    meta.className = 'result-meta';
+    meta.innerText = notes || (hashtags.length ? 'Suggested hashtags: ' + hashtags.join(' ') : '');
+
+    content.appendChild(tdiv);
+    content.appendChild(meta);
 
     const actions = document.createElement('div');
     actions.className = 'result-actions';
@@ -75,93 +162,31 @@ function showResults(list){
     copyBtn.className = 'copy-btn';
     copyBtn.innerText = 'Copy';
     copyBtn.addEventListener('click', async () => {
-      await copyToClipboard(txt);
+      await copyToClipboard(text);
       copyBtn.innerText = 'Copied!';
-      setTimeout(()=> copyBtn.innerText = 'Copy', 1000);
+      setTimeout(()=> copyBtn.innerText = 'Copy', 1200);
+    });
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'copy-btn';
+    editBtn.innerText = 'Edit';
+    editBtn.addEventListener('click', () => {
+      topicEl.value = text; window.scrollTo({top:0,behavior:'smooth'});
+      toast('Loaded post into the brief box — edit and regenerate if you like');
     });
 
     actions.appendChild(copyBtn);
-    item.appendChild(text);
-    item.appendChild(actions);
-    resultsEl.appendChild(item);
+    actions.appendChild(editBtn);
+
+    wrapper.appendChild(content);
+    wrapper.appendChild(actions);
+    resultsEl.appendChild(wrapper);
   });
 }
-
-/* Mock generator: uses templates + minor randomization to simulate AI captions */
-function mockGenerate(niche, topic, count = 5){
-  const base = topic.trim();
-  const adjective = pick(['Amazing', 'Unbelievable', 'Quick', 'Surprising', 'Pro Tip', 'Must-see']);
-  const hooks = [
-    `How to ${base} in 30s`,
-    `${adjective} ${niche === 'space' ? 'space' : ''} facts about ${base}`,
-    `Stop scrolling — ${base} explained`,
-    `You won't believe this about ${base}`,
-    `${base}: what nobody tells you`,
-    `Best ${niche} tips for ${base}`,
-    `Make your ${base} stand out today`,
-    `3 quick reasons to try ${base}`
-  ];
-
-  const toneAdjust = {
-    marketing: ['Boost engagement with', 'Turn views into customers —', 'Copy this caption:'],
-    fitness: ['Crush your next session —', 'Gym tip:', 'Try this:'],
-    food: ['Delicious:', 'Recipe idea:', 'Chef tip:'],
-    fashion: ['Style tip:', 'Trend alert:', 'Outfit inspo:'],
-    funny: ['LOL:', 'When you realize', 'That moment when'],
-    motivation: ['Daily motivation:', 'Don\'t quit —', 'Keep going:'],
-    space: ['Space fact:', 'Astronomy:', 'Cosmic:'],
-    general: ['FYI:', 'Quick thought:', 'Caption:']
-  };
-
-  const prefixList = toneAdjust[niche] || toneAdjust.general;
-
-  const results = [];
-  for(let i=0;i<count;i++){
-    const hook = pick(hooks);
-    const prefix = pick(prefixList);
-    const emoji = pick(['🚀','🔥','✨','💡','😲','📌','🎯','🍳','🏋️']);
-    // slight template mixing
-    const variants = [
-      `${prefix} ${hook} ${emoji}`,
-      `${emoji} ${hook} — ${shorten(base, 40)}`,
-      `${prefix} ${base} — ${pick(['Read this', 'Save it', 'Try it'])} ${emoji}`,
-      `${capitalize(pick(['why', 'how', 'what']))} ${base}? ${pick(['Here\'s why', 'Find out'])} ${emoji}`,
-      `${capitalize(base)}: ${pick(['3 facts', 'A quick guide', 'Must-try tips'])} ${emoji}`
-    ];
-    results.push(variants[i % variants.length]);
-  }
-
-  // add subtle uniqueness (numbers, CTA)
-  return results.map((r, idx) => {
-    if (idx === 0) return `${r} • #1 tip`;
-    if (idx === 1) return `${r} • Try it today`;
-    return r;
-  });
-}
-
-/* utilities */
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function shorten(s, max){
-  if (s.length <= max) return s;
-  return s.slice(0, max-1) + '…';
-}
-function capitalize(s){ if(!s) return s; return s.charAt(0).toUpperCase() + s.slice(1); }
 
 async function copyToClipboard(text){
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (e) {
-    // fallback
-    const ta = document.createElement('textarea'); ta.value = text;
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); ta.remove();
+  try { await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
   }
-}
-
-function toast(msg){
-  // small ephemeral message in help bar
-  const help = document.getElementById('help');
-  const old = help.innerText;
-  help.innerText = msg;
-  setTimeout(()=> help.innerText = old, 2000);
 }
