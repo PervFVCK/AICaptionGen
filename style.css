@@ -18,7 +18,7 @@ body{
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  padding:36px 18px;
+  padding:26px 14px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -28,7 +28,7 @@ body{
 /* container */
 .container{
   width:100%;
-  max-width:980px;
+  max-width:1040px;
   display:grid;
   grid-template-columns:1fr;
   gap:18px;
@@ -45,10 +45,12 @@ body{
   border-radius:var(--radius);
   box-shadow: 0 6px 18px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
 }
-.logo{margin:0;font-weight:700;letter-spacing:-0.4px}
+.logo{margin:0;font-weight:800;letter-spacing:-0.6px;font-size:1.25rem}
 .tagline{margin:0;color:var(--muted);font-size:0.95rem}
+.header-actions{display:flex;align-items:center;gap:10px}
+.small-muted{color:var(--muted);font-size:0.85rem}
 
-/* cards */
+/* card */
 .card{
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   padding:18px;
@@ -57,7 +59,7 @@ body{
   border:1px solid rgba(255,255,255,0.03);
 }
 
-/* input card layout */
+/* input layout */
 .input-card .field{
   display:flex;
   flex-direction:column;
@@ -78,8 +80,12 @@ input,select{
 input::placeholder{color:rgba(255,255,255,0.35)}
 select{appearance:none;padding-right:28px;}
 
-/* buttons */
+/* small row */
 .row{display:flex;gap:10px;align-items:center}
+.small-gaps .small{flex:1;min-width:120px}
+.field.small{margin-bottom:0}
+
+/* buttons */
 .btn{
   padding:10px 14px;
   border-radius:10px;
@@ -117,6 +123,7 @@ select{appearance:none;padding-right:28px;}
   border:1px solid rgba(255,255,255,0.02);
 }
 .result-text{flex:1;white-space:pre-wrap}
+.result-meta{color:var(--muted);font-size:0.85rem;margin-top:8px}
 .result-actions{display:flex;gap:8px;align-items:center}
 .copy-btn{padding:6px 8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;font-weight:600}
 
@@ -130,6 +137,11 @@ select{appearance:none;padding-right:28px;}
   animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* examples */
+.examples{margin-top:14px;color:var(--muted)}
+.example-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px}
+.example-grid div{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
 
 /* footer */
 .footer{display:flex;justify-content:center;color:var(--muted);padding:6px;margin-top:6px;font-size:0.9rem}
