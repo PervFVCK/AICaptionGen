@@ -1,5 +1,5 @@
 // Set your Replit backend URL here (no trailing slash)
-const BACKEND_URL = "https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev/";
+const BACKEND_URL = "https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev:8080/";
 
 const nicheEl = document.getElementById('niche');
 const topicEl = document.getElementById('topic');
