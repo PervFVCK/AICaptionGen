@@ -1,5 +1,7 @@
-// Set your Replit backend URL here (no trailing slash)
-const BACKEND_URL = "https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev";
+// ===== Initialize EmailJS =====
+(function() {
+  emailjs.init("23FmtaZ8HQsRcgUQ_"); // Replace with your actual EmailJS Public Key
+})();
 
 // Get DOM elements
 const nicheEl = document.getElementById('niche');
@@ -66,7 +68,7 @@ function toast(msg) {
   setTimeout(() => helpEl.innerText = old, 3000);
 }
 
-// ===== Generate Button =====
+// ===== Generate Button (EmailJS version) =====
 generateBtn.addEventListener('click', async () => {
   const niche = nicheEl.value.trim();
   const topic = topicEl.value.trim();
@@ -82,23 +84,28 @@ generateBtn.addEventListener('click', async () => {
   startLoading();
 
   try {
-    const resp = await fetch(`${BACKEND_URL}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ niche, topic, tone, length, count })
-    });
+    const templateParams = {
+      niche,
+      topic,
+      tone,
+      length,
+      count
+    };
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: 'server error' }));
-      throw new Error(err.error || err.details || 'Server error');
-    }
+    const response = await emailjs.send('service_o9vk3jk', 'template_2y372x7', templateParams);
+    console.log('SUCCESS!', response.status, response.text);
+    toast('Request sent successfully! Check your email.');
 
-    const data = await resp.json();
-    const posts = data.posts || [];
-    showResults(posts);
-  } catch (e) {
-    console.error(e);
-    toast(String(e.message || e));
+    // Display on-screen confirmation
+    resultsEl.innerHTML = `
+      <div class="result-item">
+        <div class="result-text">Your caption generation request was sent successfully via EmailJS.</div>
+        <div class="result-meta">Check your email inbox for the details.</div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('FAILED...', error);
+    toast('Failed to send via EmailJS. Check console or your keys.');
   } finally {
     stopLoading();
   }
@@ -110,7 +117,7 @@ clearBtn.addEventListener('click', () => {
   resultsEl.innerHTML = '';
 });
 
-// ===== Copy All Button =====
+// ===== Clipboard + Export Helpers (same as before) =====
 copyAllBtn.addEventListener('click', async () => {
   const texts = Array.from(resultsEl.querySelectorAll('.result-text')).map(n => n.innerText);
   if (!texts.length) return;
@@ -119,7 +126,6 @@ copyAllBtn.addEventListener('click', async () => {
   toast('All posts copied to clipboard');
 });
 
-// ===== Export JSON =====
 exportJsonBtn.addEventListener('click', () => {
   const posts = collectPosts();
   if (!posts.length) return toast('No posts to export');
@@ -132,7 +138,6 @@ exportJsonBtn.addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// ===== Export CSV =====
 exportCsvBtn.addEventListener('click', () => {
   const posts = collectPosts();
   if (!posts.length) return toast('No posts to export');
@@ -150,83 +155,14 @@ exportCsvBtn.addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// ===== Collect Posts =====
 function collectPosts() {
-  return Array.from(resultsEl.querySelectorAll('.result-item')).map(node => {
-    return {
-      text: node.querySelector('.result-text').innerText,
-      notes: node.querySelector('.result-notes')
-        ? node.querySelector('.result-notes').innerText
-        : '',
-      hashtags: node.dataset.hashtags
-        ? node.dataset.hashtags.split(',').filter(Boolean)
-        : []
-    };
-  });
+  return Array.from(resultsEl.querySelectorAll('.result-item')).map(node => ({
+    text: node.querySelector('.result-text')?.innerText || '',
+    notes: node.querySelector('.result-notes')?.innerText || '',
+    hashtags: node.dataset.hashtags ? node.dataset.hashtags.split(',').filter(Boolean) : []
+  }));
 }
 
-// ===== Display Results =====
-function showResults(list) {
-  resultsEl.innerHTML = '';
-  if (!list || !list.length) {
-    resultsEl.innerHTML = '<div class="result-item"><div class="result-text">No posts returned.</div></div>';
-    return;
-  }
-
-  list.forEach(item => {
-    const text = item.text || item;
-    const notes = item.notes || '';
-    const hashtags = item.hashtags || [];
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'result-item';
-    if (hashtags.length) wrapper.dataset.hashtags = hashtags.join(',');
-
-    const content = document.createElement('div');
-    content.style.flex = '1';
-
-    const tdiv = document.createElement('div');
-    tdiv.className = 'result-text';
-    tdiv.innerText = text;
-
-    const meta = document.createElement('div');
-    meta.className = 'result-meta';
-    meta.innerText = notes || (hashtags.length ? 'Suggested hashtags: ' + hashtags.join(' ') : '');
-
-    content.appendChild(tdiv);
-    content.appendChild(meta);
-
-    const actions = document.createElement('div');
-    actions.className = 'result-actions';
-
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-btn';
-    copyBtn.innerText = 'Copy';
-    copyBtn.addEventListener('click', async () => {
-      await copyToClipboard(text);
-      copyBtn.innerText = 'Copied!';
-      setTimeout(() => (copyBtn.innerText = 'Copy'), 1200);
-    });
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'copy-btn';
-    editBtn.innerText = 'Edit';
-    editBtn.addEventListener('click', () => {
-      topicEl.value = text;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast('Loaded post into the brief box — edit and regenerate if you like');
-    });
-
-    actions.appendChild(copyBtn);
-    actions.appendChild(editBtn);
-
-    wrapper.appendChild(content);
-    wrapper.appendChild(actions);
-    resultsEl.appendChild(wrapper);
-  });
-}
-
-// ===== Clipboard Utility =====
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -238,4 +174,4 @@ async function copyToClipboard(text) {
     document.execCommand('copy');
     ta.remove();
   }
-      }
+}
