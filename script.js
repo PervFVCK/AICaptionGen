@@ -61,7 +61,7 @@ generateBtn.addEventListener('click', async () => {
 
   startLoading();
   try {
-    const resp = await fetch(BACKEND_URL + '/generate', {
+    const resp = await fetch(https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev:8080/ + '/generate', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ niche, topic, tone, length, count })
