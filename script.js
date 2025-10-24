@@ -1,6 +1,7 @@
 // Set your Replit backend URL here (no trailing slash)
-const BACKEND_URL = "https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev:8080/";
+const BACKEND_URL = "https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev";
 
+// Get DOM elements
 const nicheEl = document.getElementById('niche');
 const topicEl = document.getElementById('topic');
 const toneEl = document.getElementById('tone');
@@ -16,6 +17,7 @@ const exportJsonBtn = document.getElementById('exportJson');
 const exportCsvBtn = document.getElementById('exportCsv');
 const helpEl = document.getElementById('help');
 
+// ===== Example Picker Logic =====
 examplePicker.addEventListener('change', () => {
   const val = examplePicker.value;
   if (val === 'new-product') {
@@ -45,11 +47,26 @@ examplePicker.addEventListener('change', () => {
   }
 });
 
-// UI helpers
-function startLoading(){ loadingEl.classList.remove('hidden'); generateBtn.disabled = true; clearBtn.disabled = true; }
-function stopLoading(){ loadingEl.classList.add('hidden'); generateBtn.disabled = false; clearBtn.disabled = false; }
-function toast(msg){ const old = helpEl.innerText; helpEl.innerText = msg; setTimeout(()=> helpEl.innerText = old, 3000); }
+// ===== UI Helpers =====
+function startLoading() {
+  loadingEl.classList.remove('hidden');
+  generateBtn.disabled = true;
+  clearBtn.disabled = true;
+}
 
+function stopLoading() {
+  loadingEl.classList.add('hidden');
+  generateBtn.disabled = false;
+  clearBtn.disabled = false;
+}
+
+function toast(msg) {
+  const old = helpEl.innerText;
+  helpEl.innerText = msg;
+  setTimeout(() => helpEl.innerText = old, 3000);
+}
+
+// ===== Generate Button =====
 generateBtn.addEventListener('click', async () => {
   const niche = nicheEl.value.trim();
   const topic = topicEl.value.trim();
@@ -57,19 +74,25 @@ generateBtn.addEventListener('click', async () => {
   const length = parseInt(lengthEl.value) || 140;
   const count = parseInt(countEl.value) || 3;
 
-  if (!topic) { topicEl.focus(); return toast('Please enter a topic or brief.'); }
+  if (!topic) {
+    topicEl.focus();
+    return toast('Please enter a topic or brief.');
+  }
 
   startLoading();
+
   try {
-    const resp = await fetch(https://dc4fd7f4-1b79-44b9-8e5e-3854a661137b-00-1p6o46xvj59d6.riker.replit.dev:8080/ + '/generate', {
+    const resp = await fetch(`${BACKEND_URL}/generate`, {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ niche, topic, tone, length, count })
     });
+
     if (!resp.ok) {
-      const err = await resp.json().catch(()=>({error:'server error'}));
+      const err = await resp.json().catch(() => ({ error: 'server error' }));
       throw new Error(err.error || err.details || 'Server error');
     }
+
     const data = await resp.json();
     const posts = data.posts || [];
     showResults(posts);
@@ -81,11 +104,13 @@ generateBtn.addEventListener('click', async () => {
   }
 });
 
+// ===== Clear Button =====
 clearBtn.addEventListener('click', () => {
   topicEl.value = '';
   resultsEl.innerHTML = '';
 });
 
+// ===== Copy All Button =====
 copyAllBtn.addEventListener('click', async () => {
   const texts = Array.from(resultsEl.querySelectorAll('.result-text')).map(n => n.innerText);
   if (!texts.length) return;
@@ -94,38 +119,54 @@ copyAllBtn.addEventListener('click', async () => {
   toast('All posts copied to clipboard');
 });
 
+// ===== Export JSON =====
 exportJsonBtn.addEventListener('click', () => {
   const posts = collectPosts();
   if (!posts.length) return toast('No posts to export');
-  const blob = new Blob([JSON.stringify(posts, null, 2)], {type: 'application/json'});
+  const blob = new Blob([JSON.stringify(posts, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'posts.json'; a.click(); URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'posts.json';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
+// ===== Export CSV =====
 exportCsvBtn.addEventListener('click', () => {
   const posts = collectPosts();
   if (!posts.length) return toast('No posts to export');
   let csv = 'text,notes,hashtags\n';
   posts.forEach(p => {
     const h = (p.hashtags || []).join(' ');
-    csv += `"${(p.text||'').replace(/"/g,'""')}","${(p.notes||'').replace(/"/g,'""')}","${h.replace(/"/g,'""')}"\n`;
+    csv += `"${(p.text || '').replace(/"/g, '""')}","${(p.notes || '').replace(/"/g, '""')}","${h.replace(/"/g, '""')}"\n`;
   });
-  const blob = new Blob([csv], {type:'text/csv'});
+  const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'posts.csv'; a.click(); URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'posts.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
-function collectPosts(){
+// ===== Collect Posts =====
+function collectPosts() {
   return Array.from(resultsEl.querySelectorAll('.result-item')).map(node => {
     return {
       text: node.querySelector('.result-text').innerText,
-      notes: node.querySelector('.result-notes') ? node.querySelector('.result-notes').innerText : '',
-      hashtags: node.dataset.hashtags ? node.dataset.hashtags.split(',').filter(Boolean) : []
+      notes: node.querySelector('.result-notes')
+        ? node.querySelector('.result-notes').innerText
+        : '',
+      hashtags: node.dataset.hashtags
+        ? node.dataset.hashtags.split(',').filter(Boolean)
+        : []
     };
   });
 }
 
-function showResults(list){
+// ===== Display Results =====
+function showResults(list) {
   resultsEl.innerHTML = '';
   if (!list || !list.length) {
     resultsEl.innerHTML = '<div class="result-item"><div class="result-text">No posts returned.</div></div>';
@@ -164,14 +205,15 @@ function showResults(list){
     copyBtn.addEventListener('click', async () => {
       await copyToClipboard(text);
       copyBtn.innerText = 'Copied!';
-      setTimeout(()=> copyBtn.innerText = 'Copy', 1200);
+      setTimeout(() => (copyBtn.innerText = 'Copy'), 1200);
     });
 
     const editBtn = document.createElement('button');
     editBtn.className = 'copy-btn';
     editBtn.innerText = 'Edit';
     editBtn.addEventListener('click', () => {
-      topicEl.value = text; window.scrollTo({top:0,behavior:'smooth'});
+      topicEl.value = text;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast('Loaded post into the brief box — edit and regenerate if you like');
     });
 
@@ -184,9 +226,16 @@ function showResults(list){
   });
 }
 
-async function copyToClipboard(text){
-  try { await navigator.clipboard.writeText(text); }
-  catch(e){
-    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+// ===== Clipboard Utility =====
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
   }
-}
+      }
